@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% load static %}
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    {% include 'djangoapp/navbar.html' %}
+    <div class="container-fluid">
+        <h1>Contact Us:</h1>
+        <ul>
+            <label for="phone">Phone: </label>
+            <p name="phone">555-555-5555</p>
+            <label for="address">Address: </label>
+            <p name="address">123 Main St.</p>
+        </ul>
+    </div>
+</body>

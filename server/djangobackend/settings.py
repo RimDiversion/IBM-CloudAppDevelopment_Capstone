@@ -27,7 +27,11 @@ DEBUG = True
 
 APPEND_SLASH = True
 
-ALLOWED_HOSTS = ["localhost"]
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "bestcars-project.us-south.cf.appdomain.cloud"
+    ]
 
 
 # Application definition
