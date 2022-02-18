@@ -5,12 +5,11 @@ from django.utils.timezone import now
 # Create your models here.
 
 class CarMake(models.Model):
-    name = models.CharField(null= False, max_length=30, default='Audi')
-    description = models.CharField(null= False, max_length=300, default='Audi cars are aight')
+    name = models.CharField(null= False, max_length=30, default='Make')
+    description = models.CharField(null= False, max_length=300, default='Car Description')
 
     def __str__(self):
-        return 'Name:' + self.name + ',' + \
-            'Description:' + self.description
+        return self.name
 
 
 class CarModel(models.Model):
@@ -19,14 +18,14 @@ class CarModel(models.Model):
     WAGON = 'wagon'
     OTHERS = 'others'
     CAR_CHOICES = [(SEDAN, "Sedan"), (SUV, 'SUV'), (WAGON, 'Wagon'), (OTHERS, 'Others')]
-    carmake = models.ForeignKey(CarMake, null= True, on_delete=models.CASCADE)
-    name = models.CharField(null= False, max_length=30, default='Audi X8')
-    dealerid = models.IntegerField(null=True)
-    cartype = models.CharField(null= False, max_length=20, choices= CAR_CHOICES, default=SEDAN)
+    car_make = models.ForeignKey(CarMake, null= True, on_delete=models.CASCADE)
+    name = models.CharField(null= False, max_length=30, default='Model')
+    dealer_id = models.IntegerField(null=True)
+    car_type = models.CharField(null= False, max_length=20, choices= CAR_CHOICES, default=SEDAN)
     year = models.DateField(null= True)
 
     def __str__(self):
-        return 'Name ' + self.name
+        return self.name
 # <HINT> Create a plain Python class `CarDealer` to hold dealer data
 
 class CarDealer:
@@ -53,7 +52,7 @@ class CarDealer:
         self.idx = 0
 
     def __str__(self):
-        return "Dealer name: " + self.full_name
+        return self.short_name
 
 
 # <HINT> Create a plain Python class `DealerReview` to hold review data
@@ -70,4 +69,4 @@ class DealerReview:
         self.sentiment = sentiment
 
     def __str__(self):
-        return "Review: " + self.review
+        return self.review
