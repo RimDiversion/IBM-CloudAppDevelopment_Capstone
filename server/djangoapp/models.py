@@ -52,7 +52,7 @@ class CarDealer:
         self.idx = 0
 
     def __str__(self):
-        return self.short_name
+        return self.full_name
 
 
 # <HINT> Create a plain Python class `DealerReview` to hold review data

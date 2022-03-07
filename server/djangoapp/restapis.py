@@ -3,7 +3,7 @@ import json
 import logging
 # import related models here
 from requests.auth import HTTPBasicAuth
-from . import models
+from .models import DealerReview, CarDealer
 from ibm_watson import NaturalLanguageUnderstandingV1
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from ibm_watson.natural_language_understanding_v1 import Features, SentimentOptions
@@ -46,72 +46,88 @@ def get_dealers_from_cf(url, **kwargs):
     json_result = get_request(url)
     if json_result:
         # Get the row list in JSON as dealers
-        dealers = json_result["body"]["rows"]
-        # For each dealer object
-        for dealer in dealers:
-            content = dealer["doc"]
+        if "rows" in json_result["body"]:
+            dealers = json_result["body"]["rows"]
+            for dealer in dealers:
+                content = dealer["doc"]
             # Get its content in `doc` object
             # Create a CarDealer object with values in `doc` object
-            dealer_obj = models.CarDealer(address=content["address"], city=content["city"], full_name=content["full_name"],
+                dealer_obj = CarDealer(address=content["address"], city=content["city"], full_name=content["full_name"],
                                    id=content["id"], lat=content["lat"], long=content["long"],
                                    short_name=content["short_name"],
                                    st=content["st"], zip=content["zip"])
-            results.append(content)
+                results.append(dealer_obj)
+        else:
+            dealer = json_result["body"]
+            content = dealer["docs"][0]
+            dealer_obj = CarDealer(address=content["address"], city=content["city"], full_name=content["full_name"],
+                                   id=content["id"], lat=content["lat"], long=content["long"],
+                                   short_name=content["short_name"],
+                                   st=content["st"], zip=content["zip"])
+            results.append(dealer_obj)
+        # For each dealer object
+        
 
     return results
 
 
 # Create a get_dealer_reviews_from_cf method to get reviews by dealer id from a cloud function
-def get_dealer_reviews_from_cf(url, dealerId):
+def get_dealer_reviews_from_cf(url, **kwargs):
     results = []
+    dealerId = kwargs.get("dealerId")
     json_result = get_request(url, dealerId=dealerId)
-    if json_result:
-        reviews = json_result
-        # for review in reviews:
-        #     try:
-        #         review_obj = models.DealerReview(name = review["name"], 
-        #         dealership = review["dealership"], review = review["review"], purchase=review["purchase"],
-        #         purchase_date = review["purchase_date"], car_make = review['car_make'],
-        #         car_model = review['car_model'], car_year= review['car_year'], sentiment= "none")
-        #     except:
-        #         review_obj = models.DealerReview(name = review["name"], 
-        #         dealership = review["dealership"], review = review["review"], purchase=review["purchase"],
-        #         purchase_date = 'none', car_make = 'none',
-        #         car_model = 'none', car_year= 'none', sentiment= "none")
-                
-        #     review_obj.sentiment = analyze_review_sentiments(review_obj.review)
-        #     print(review_obj.sentiment)
-                    
-        #     results.append(review_obj)
 
-    return results
-# - Call get_request() with specified arguments
-# - Parse JSON results into a DealerView object list
+    if json_result:
+        reviews = json_result["body"]["data"]["docs"]
+
+        for review in reviews:
+            # sentiment = analyze_review_sentiments(review["review"])
+            sentiment = 'positive'
+            if review["purchase"] is False:
+                review_obj = DealerReview(
+                    name = review["name"],
+                    purchase = review["purchase"],
+                    dealership = review["dealership"],
+                    review = review["review"],
+                    purchase_date = None,
+                    car_make = "",
+                    car_model = "",
+                    car_year = "",
+                    sentiment = sentiment,
+                )
+                results.append(review_obj)
+            else:
+                review_obj = DealerReview(
+                    name = review["name"],
+                    purchase = review["purchase"],
+                    dealership = review["dealership"],
+                    review = review["review"],
+                    purchase_date = review["purchase_date"],
+                    car_make = review["car_make"],
+                    car_model = review["car_model"],
+                    car_year = review["car_year"],
+                    sentiment = sentiment,
+                )
+                results.append(review_obj)
+        return results
 
 
 # Create an `analyze_review_sentiments` method to call Watson NLU and analyze text
-def analyze_review_sentiments(text):
+def analyze_review_sentiments(dealerreview):
     api_key = "5nUfxXTKn_QgWxBihaKwV7iSflp4rRtLJseP1_IgoUkE"
     url = "https://api.us-south.natural-language-understanding.watson.cloud.ibm.com/instances/7605aa17-6907-4f65-80c0-d50429c59c07"
-    texttoanalyze= text
-    version = '2020-08-01'
     authenticator = IAMAuthenticator(api_key)
-    natural_language_understanding = NaturalLanguageUnderstandingV1(
-    version='2020-08-01',
-    authenticator=authenticator
-    )
-    natural_language_understanding.set_service_url(url)
-    response = natural_language_understanding.analyze(
-        text=text,
-        features= Features(sentiment= SentimentOptions())
+    nlu = NaturalLanguageUnderstandingV1(
+        version='2021-08-01',
+        authenticator=authenticator)
+    nlu.set_service_url(url)
+
+    json_result = nlu.analyze(
+        text=dealerreview,
+        features=Features(sentiment=SentimentOptions()),
+        return_analyzed_text = True
     ).get_result()
-    print(json.dumps(response))
-    sentiment_score = str(response["sentiment"]["document"]["score"])
-    sentiment_label = response["sentiment"]["document"]["label"]
-    print(sentiment_score)
-    print(sentiment_label)
-    sentimentresult = sentiment_label
-    
-    return sentimentresult
+    sentiment = json_result['sentiment']['document']['label']
+    return sentiment
 
 
